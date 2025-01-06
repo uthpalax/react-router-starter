@@ -4,7 +4,12 @@ import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Link, Form } from "react-router"
-import { signup } from "~/server/auth.server";
+import { signup, requireAnonymous } from "~/server/auth.server";
+import { handleNewSession } from "~/server/session.server";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  await requireAnonymous(request)
+}
 
 export async function action({ request }: Route.ActionArgs) {
   let formData = await request.formData();
@@ -13,7 +18,7 @@ export async function action({ request }: Route.ActionArgs) {
   let username = formData.get("username");
   if (email && password && username && typeof email == "string" && typeof password == "string" && typeof username == "string") {
     const session = await signup({ username, email, password })
-    console.log("session", session)
+    return await handleNewSession({ session, request, redirectTo: '/' })
   }
 }
 
@@ -29,17 +34,17 @@ export default function RegisterPage() {
       <div className="grid gap-6">
         <div className="grid gap-2">
           <Label htmlFor="username">Username</Label>
-          <Input id="username" type="text" required />
+          <Input id="username" type="text" name="username" required />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="m@example.com" required />
+          <Input id="email" type="email" name="email" placeholder="m@example.com" required />
         </div>
         <div className="grid gap-2">
           <div className="flex items-center">
             <Label htmlFor="password">Password</Label>
           </div>
-          <Input id="password" type="password" required />
+          <Input id="password" type="password" name="password" required />
         </div>
         <Button type="submit" className="w-full">
           Register
@@ -59,3 +64,4 @@ export default function RegisterPage() {
     </Form>
   )
 }
+
