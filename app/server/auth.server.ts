@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs'
-import { type Session, type Password, type User } from '@prisma/client'
-import { prisma } from './db.server.ts'
+import { type Password, type User } from '@prisma/client'
+import { prisma } from './db.server'
 import { redirect } from 'react-router'
-import { authSessionStorage } from './session.server.ts'
+import { authSessionStorage } from './session.server'
 
 export const sessionKey = 'sessionId'
 export const SESSION_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 30
@@ -38,13 +38,13 @@ export async function requireAnonymous(request: Request) {
 }
 
 export async function login({
-  username,
+  email,
   password,
 }: {
-  username: User['username']
+  email: User['email']
   password: string
 }) {
-  const user = await verifyUserPassword({ username }, password)
+  const user = await verifyUserPassword({ email }, password)
   if (!user) return null
   const session = await prisma.session.create({
     select: { id: true, expirationDate: true, userId: true },
@@ -94,7 +94,7 @@ export async function getPasswordHash(password: string) {
 }
 
 export async function verifyUserPassword(
-  where: Pick<User, 'username'> | Pick<User, 'id'>,
+  where: Pick<User, 'email'> | Pick<User, 'id'>,
   password: Password['hash'],
 ) {
   const userWithPassword = await prisma.user.findUnique({

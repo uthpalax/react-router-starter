@@ -10,6 +10,8 @@ export function meta({ }: Route.MetaArgs) {
 
 export default function Home() {
   return <div>
+    If you are authenticated. You will be redirected here.
+    <br />
     <Link to={`/login`}>Login here</Link>
   </div>;
 }
