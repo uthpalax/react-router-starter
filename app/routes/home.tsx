@@ -1,5 +1,7 @@
+import { logout } from "~/server/auth.server";
 import type { Route } from "./+types/home";
-import { Link } from "react-router";
+import { Link, Form } from "react-router";
+import { Button } from "~/components/ui/Button";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -8,10 +10,17 @@ export function meta({ }: Route.MetaArgs) {
   ];
 }
 
+export async function action({ request }: Route.ActionArgs) {
+  return logout({ request });
+}
+
 export default function Home() {
   return <div>
     If you are authenticated. You will be redirected here.
     <br />
     <Link to={`/login`}>Login here</Link>
+    <Form method="post">
+      <Button type="submit">Logout</Button>
+    </Form>
   </div>;
 }

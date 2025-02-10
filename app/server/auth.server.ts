@@ -88,6 +88,37 @@ export async function signup({
   return session
 }
 
+
+export async function logout(
+  {
+    request,
+    redirectTo = '/',
+  }: {
+    request: Request
+    redirectTo?: string
+  },
+  responseInit?: ResponseInit,
+) {
+  const authSession = await authSessionStorage.getSession(
+    request.headers.get('cookie'),
+  )
+  const sessionId = authSession.get(sessionKey)
+  // if this fails, we still need to delete the session from the user's browser
+  // and it doesn't do any harm staying in the db anyway.
+  if (sessionId) {
+    // the .catch is important because that's what triggers the query.
+    // learn more about PrismaPromise: https://www.prisma.io/docs/orm/reference/prisma-client-reference#prismapromise-behavior
+    void prisma.session.deleteMany({ where: { id: sessionId } }).catch(() => { })
+  }
+  throw redirect(redirectTo, {
+    ...responseInit,
+    headers: combineHeaders(
+      { 'set-cookie': await authSessionStorage.destroySession(authSession) },
+      responseInit?.headers,
+    ),
+  })
+}
+
 export async function getPasswordHash(password: string) {
   const hash = await bcrypt.hash(password, 10)
   return hash
@@ -114,3 +145,20 @@ export async function verifyUserPassword(
 
   return { id: userWithPassword.id }
 }
+
+/**
+ * Combine multiple header objects into one (uses append so headers are not overridden)
+ */
+export function combineHeaders(
+  ...headers: Array<ResponseInit['headers'] | null | undefined>
+) {
+  const combined = new Headers()
+  for (const header of headers) {
+    if (!header) continue
+    for (const [key, value] of new Headers(header).entries()) {
+      combined.append(key, value)
+    }
+  }
+  return combined
+}
+
